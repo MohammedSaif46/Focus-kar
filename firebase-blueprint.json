@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "onboarding_completed": { "type": "integer", "description": "0 or 1" },
+        "accessibility_granted": { "type": "integer", "description": "0 or 1" },
+        "notifications_granted": { "type": "integer", "description": "0 or 1" },
+        "streak_count": { "type": "integer" },
+        "last_focus_date": { "type": "string", "description": "ISO date string" },
+        "streak_freeze_used_this_week": { "type": "integer" },
+        "last_freeze_reset_date": { "type": "string", "description": "ISO date string" },
+        "focus_coins": { "type": "integer" },
+        "emergency_unlocks_today": { "type": "integer" },
+        "last_unlock_date": { "type": "string", "description": "ISO date string" },
+        "level": { "type": "integer" },
+        "experience": { "type": "integer" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "porn_blocker_enabled": { "type": "integer" },
+        "strict_porn_blocker": { "type": "integer" },
+        "porn_blocker_pin": { "type": "string" },
+        "theme": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "FocusSession": {
+      "title": "FocusSession",
+      "description": "A recorded focus session",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "start_time": { "type": "string", "format": "date-time" },
+        "duration_minutes": { "type": "integer" },
+        "completed": { "type": "integer" },
+        "tree_type": { "type": "string" },
+        "coins_earned": { "type": "integer" }
+      },
+      "required": ["uid", "start_time", "duration_minutes"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A user task",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "duration_minutes": { "type": "integer" },
+        "completed": { "type": "integer" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "FocusSession",
+      "description": "Focus sessions"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User tasks"
+    }
+  }
+}

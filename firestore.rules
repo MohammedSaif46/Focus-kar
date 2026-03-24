@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: uid
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - email: string (required) - User email
+    //   - displayName: string (optional) - User display name
+    //   - photoURL: string (optional) - User photo URL
+    //   - onboarding_completed: int (required) - 0 or 1
+    //   - theme: string (optional) - Selected theme
+    //   - focus_coins: int (required) - User balance
+    //   - streak_count: int (required) - Current streak
+    //   - level: int (required) - User level
+    //   - experience: int (required) - User XP
+    //
+    // Collection: sessions
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required) - Owner UID
+    //   - start_time: string (required) - ISO date-time
+    //   - duration_minutes: int (required) - Session length
+    //   - completed: int (required) - 0 or 1
+    //
+    // Collection: tasks
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required) - Owner UID
+    //   - title: string (required) - Task title
+    //   - completed: int (required) - 0 or 1
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "mohammedsaifb5@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() > 0 &&
+             data.email is string && data.email.size() > 0 &&
+             data.onboarding_completed is int &&
+             data.focus_coins is int &&
+             data.streak_count is int &&
+             data.level is int &&
+             data.experience is int;
+    }
+
+    function isValidSession(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.start_time is string &&
+             data.duration_minutes is int &&
+             data.completed is int;
+    }
+
+    function isValidTask(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.title is string && data.title.size() > 0 &&
+             data.completed is int;
+    }
+
+    // User profiles
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if (isOwner(uid) && isValidUser(request.resource.data)) || isAdmin();
+    }
+    
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidSession(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid && isValidSession(request.resource.data)) || isAdmin();
+      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+    
+    // Tasks
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidTask(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid && isValidTask(request.resource.data)) || isAdmin();
+      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+  }
+}

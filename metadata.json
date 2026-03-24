@@ -1,0 +1,5 @@
+{
+  "name": "Focus Kar",
+  "description": "Focus Kar – Beat Distractions, Build Discipline. A premium productivity app with gamified focus sessions, app blocking, and deep analytics.",
+  "requestFramePermissions": ["notifications", "geolocation"]
+}

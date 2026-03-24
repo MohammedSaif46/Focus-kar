@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary-color, #1c1917);
+  --color-primary-foreground: var(--primary-foreground, #ffffff);
+  --color-accent: var(--accent-color, #10b981);
+}
+
+.theme-rainbow {
+  --primary-color: #1c1917;
+  --primary-foreground: #ffffff;
+  --accent-color: #10b981;
+}
+
+@keyframes rainbow-text {
+  0% { color: #7c3aed; }
+  14% { color: #4f46e5; }
+  28% { color: #2563eb; }
+  42% { color: #16a34a; }
+  57% { color: #ca8a04; }
+  71% { color: #ea580c; }
+  85% { color: #dc2626; }
+  100% { color: #7c3aed; }
+}
+
+@keyframes rainbow-bg {
+  0% { background-color: #7c3aed; }
+  14% { background-color: #4f46e5; }
+  28% { background-color: #2563eb; }
+  42% { background-color: #16a34a; }
+  57% { background-color: #ca8a04; }
+  71% { background-color: #ea580c; }
+  85% { background-color: #dc2626; }
+  100% { background-color: #7c3aed; }
+}
+
+@keyframes rainbow-border {
+  0% { border-color: #7c3aed; }
+  14% { border-color: #4f46e5; }
+  28% { border-color: #2563eb; }
+  42% { border-color: #16a34a; }
+  57% { border-color: #ca8a04; }
+  71% { border-color: #ea580c; }
+  85% { border-color: #dc2626; }
+  100% { border-color: #7c3aed; }
+}
+
+.theme-rainbow .text-stone-900 { animation: rainbow-text 10s linear infinite; }
+.theme-rainbow .bg-stone-900 { animation: rainbow-bg 10s linear infinite; }
+.theme-rainbow .border-stone-900 { animation: rainbow-border 10s linear infinite; }
+.theme-rainbow .bg-emerald-400 { animation: rainbow-bg 10s linear infinite; }
+
+/* Apply theme colors to specific elements */
+[class^="theme-"]:not(.theme-rainbow) .bg-stone-900 { background-color: var(--primary-color); }
+[class^="theme-"]:not(.theme-rainbow) .text-stone-900 { color: var(--primary-color); }
+[class^="theme-"]:not(.theme-rainbow) .border-stone-900 { border-color: var(--primary-color); }
+[class^="theme-"] .hover\:bg-stone-800:hover { filter: brightness(0.9); }
