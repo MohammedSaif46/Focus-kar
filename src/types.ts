@@ -25,6 +25,8 @@ export interface User {
   uninstall_blocked: number;
   split_screen_blocked: number;
   floating_window_blocked: number;
+  display_over_apps_granted: number;
+  blocked_apps: string[];
 }
 
 export interface FocusSession {

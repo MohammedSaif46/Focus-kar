@@ -31,6 +31,21 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSort, setFilterSort] = useState<'newest' | 'oldest'>('newest');
 
+  const StatusBar = ({ dark = false }: { dark?: boolean }) => (
+    <div className={`h-12 px-6 flex items-center justify-between ${dark ? 'text-white' : 'text-black'}`}>
+      <span className="text-sm font-bold">9:41</span>
+      <div className="flex items-center gap-2">
+        <div className="w-4 h-4 rounded-sm border-[1.5px] border-current flex items-center justify-center">
+          <div className="w-2 h-2 bg-current rounded-full" />
+        </div>
+        <Zap className="w-4 h-4 fill-current" />
+        <div className="w-6 h-3 rounded-sm border-[1.5px] border-current relative">
+          <div className="absolute left-0.5 top-0.5 bottom-0.5 w-3 bg-current rounded-sm" />
+        </div>
+      </div>
+    </div>
+  );
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
       const categoryMatch = filterCategory === 'all' || task.category === filterCategory;
@@ -277,101 +292,96 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
   ];
 
   return (
-    <div className="max-w-5xl mx-auto p-6 md:p-10 pb-32">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div className="flex items-center gap-4">
-          {user.photoURL ? (
-            <img 
-              src={user.photoURL} 
-              alt={user.displayName || 'User'} 
-              referrerPolicy="no-referrer"
-              className="w-12 h-12 rounded-2xl shadow-lg shadow-stone-200 object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 bg-stone-900 rounded-2xl flex items-center justify-center shadow-lg shadow-stone-200">
-              <span className="text-white font-black text-xl tracking-tighter">
-                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'FK'}
-              </span>
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
-                {user.displayName ? 'Welcome back' : 'Get Started'}
-              </span>
-              <div className="h-px w-4 bg-stone-200" />
-            </div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-stone-900 tracking-tight">
-                {user.displayName ? user.displayName.split(' ')[0] : 'Focus Kar'}
-              </h1>
-              <div className="px-2 py-0.5 bg-stone-900 text-white text-[10px] font-black rounded-lg uppercase tracking-widest">
-                Lvl {user.level}
+    <div className="min-h-screen bg-white font-sans selection:bg-stone-900 selection:text-white">
+      <StatusBar />
+      
+      <div className="max-w-7xl mx-auto p-6 md:p-10 pb-32">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+          <div className="flex items-center gap-5">
+            {user.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt={user.displayName || 'User'} 
+                referrerPolicy="no-referrer"
+                className="w-16 h-16 rounded-[1.5rem] shadow-2xl shadow-stone-200 object-cover border-2 border-white"
+              />
+            ) : (
+              <div className="w-16 h-16 bg-stone-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-stone-200 border-2 border-white">
+                <span className="text-white font-black text-2xl tracking-tighter">
+                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'FK'}
+                </span>
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                  {user.displayName ? 'Welcome back' : 'Get Started'}
+                </span>
+                <div className="h-px w-6 bg-stone-100" />
+              </div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-black text-stone-900 tracking-tight">
+                  {user.displayName ? user.displayName.split(' ')[0] : 'Focus Kar'}
+                </h1>
+                <div className="px-3 py-1 bg-stone-900 text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-stone-200">
+                  Lvl {user.level}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-stone-400 text-[10px] font-bold uppercase tracking-widest">
-              <span>{user.displayName || 'Guest'}</span>
-              <span className="w-1 h-1 bg-stone-300 rounded-full" />
-              <span>{user.email}</span>
+          </div>
+          
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 px-5 py-3 bg-amber-50 text-amber-600 rounded-[1.25rem] border border-amber-100 shadow-sm">
+                <Coins className="w-5 h-5" />
+                <span className="font-black text-xl">{user.focus_coins}</span>
+              </div>
+              <div className="flex items-center gap-2.5 px-5 py-3 bg-orange-50 text-orange-600 rounded-[1.25rem] border border-orange-100 shadow-sm">
+                <Flame className="w-5 h-5 fill-orange-600" />
+                <span className="font-black text-xl">{user.streak_count}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setIsDndEnabled(!isDndEnabled)}
+                  className={`p-4 rounded-[1.25rem] transition-all shadow-sm ${isDndEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-100 hover:bg-stone-50'}`}
+                >
+                  <Bell className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={() => setShowThemeSwitcher(true)}
+                  className="p-4 bg-white text-stone-600 border border-stone-100 rounded-[1.25rem] hover:bg-stone-50 transition-all shadow-sm"
+                >
+                  <Palette className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={onLogout}
+                  className="p-4 bg-white text-stone-600 border border-stone-100 rounded-[1.25rem] hover:bg-stone-50 transition-all shadow-sm"
+                >
+                  <LogOut className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100 shadow-sm">
-              <Coins className="w-5 h-5" />
-              <span className="font-bold text-lg">{user.focus_coins}</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-2xl border border-orange-100 shadow-sm">
-              <Flame className="w-5 h-5 fill-orange-600" />
-              <span className="font-bold text-lg">{user.streak_count}</span>
-            </div>
-            <button 
-              onClick={() => setIsDndEnabled(!isDndEnabled)}
-              className={`p-3 rounded-2xl transition-all shadow-sm ${isDndEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-100'}`}
-            >
-              <Bell className="w-6 h-6" />
-            </button>
-            <button 
-              onClick={() => setShowThemeSwitcher(true)}
-              className="p-3 bg-white text-stone-600 border border-stone-100 rounded-2xl hover:bg-stone-50 transition-all shadow-sm"
-              title="Change Theme"
-            >
-              <Palette className="w-6 h-6" />
-            </button>
-            <button 
-              onClick={onLogout}
-              className="p-3 bg-white text-stone-600 border border-stone-100 rounded-2xl hover:bg-stone-50 transition-all shadow-sm"
-              title="Logout"
-            >
-              <LogOut className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-600/60 uppercase tracking-widest">
-            <AlertTriangle className="w-3 h-3" />
-            Save coins for emergency unlocks
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Daily Motivation */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10 p-6 bg-stone-50 border border-stone-100 rounded-[2.5rem] flex items-center gap-6"
-      >
-        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-          <Sparkles className="w-6 h-6 text-amber-500" />
-        </div>
-        <div>
-          <p className="text-stone-900 font-bold text-sm leading-relaxed">
-            "Discipline is choosing between what you want now and what you want most."
-          </p>
-          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Abraham Lincoln</span>
-        </div>
-      </motion.div>
+        {/* Daily Motivation */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 p-8 bg-stone-50 border border-stone-100 rounded-[3rem] flex items-center gap-8 relative overflow-hidden group"
+        >
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white/50 to-transparent pointer-events-none" />
+          <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-stone-200/50 group-hover:scale-110 transition-transform">
+            <Sparkles className="w-8 h-8 text-amber-500" />
+          </div>
+          <div>
+            <p className="text-stone-900 font-black text-lg leading-tight tracking-tight mb-2">
+              "Discipline is choosing between what you want now and what you want most."
+            </p>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Abraham Lincoln</span>
+          </div>
+        </motion.div>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -444,127 +454,127 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
             <Timer onComplete={handleSessionComplete} isDndEnabled={isDndEnabled} />
           </section>
 
-          {/* Tasks Section */}
-          <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-stone-100">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-stone-900 flex items-center gap-3">
-                <Clock className="w-6 h-6 text-stone-400" />
-                Focus Tasks
-              </h2>
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setShowAddTaskModal(true)}
-                  className="p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-                <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                  {tasks.filter(t => t.completed === 0).length} Pending
-                </div>
-              </div>
-            </div>
-
-            {/* Advanced Filters */}
-            <div className="flex flex-wrap items-center gap-4 mb-8 p-4 bg-stone-50 rounded-[1.5rem] border border-stone-100">
-              <div className="flex items-center gap-2">
-                <Filter className="w-3.5 h-3.5 text-stone-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Filters</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Category</span>
-                <select 
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
-                >
-                  <option value="all">All</option>
-                  <option value="study">Study</option>
-                  <option value="work">Work</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Status</span>
-                <select 
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
-                >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Sort</span>
-                <select 
-                  value={filterSort}
-                  onChange={(e) => setFilterSort(e.target.value as 'newest' | 'oldest')}
-                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredTasks.length === 0 ? (
-                <div className="col-span-2 py-12 text-center bg-stone-50 rounded-[2rem] border border-dashed border-stone-200">
-                  <p className="text-stone-400 text-sm font-medium italic">No tasks match your filters.</p>
-                </div>
-              ) : (
-                filteredTasks.map((task) => (
-                  <motion.div 
-                    layout
-                    key={task.id} 
-                    className={`p-5 rounded-[2rem] border transition-all ${
-                      task.completed 
-                      ? 'bg-stone-50 border-stone-100 opacity-60' 
-                      : 'bg-white border-stone-100 shadow-sm hover:shadow-md'
-                    }`}
+            {/* Tasks Section */}
+            <section className="bg-white p-10 rounded-[3.5rem] shadow-xl shadow-stone-100 border border-stone-50">
+              <div className="flex items-center justify-between mb-10">
+                <h2 className="text-3xl font-black text-stone-900 flex items-center gap-4 tracking-tight">
+                  <Clock className="w-8 h-8 text-stone-400" />
+                  Focus Tasks
+                </h2>
+                <div className="flex items-center gap-5">
+                  <button 
+                    onClick={() => setShowAddTaskModal(true)}
+                    className="p-3.5 bg-stone-900 text-white rounded-2xl hover:bg-stone-800 transition-all shadow-2xl shadow-stone-300 active:scale-90"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${
-                          task.category === 'study' ? 'bg-blue-50 text-blue-500' :
-                          task.category === 'work' ? 'bg-purple-50 text-purple-500' :
-                          'bg-stone-100 text-stone-500'
-                        }`}>
-                          {task.category === 'study' ? <BookOpen className="w-4 h-4" /> :
-                           task.category === 'work' ? <Briefcase className="w-4 h-4" /> :
-                           <Plus className="w-4 h-4" />}
+                    <Plus className="w-6 h-6" />
+                  </button>
+                  <div className="text-[11px] font-black text-stone-400 uppercase tracking-[0.2em]">
+                    {tasks.filter(t => t.completed === 0).length} Pending
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Filters */}
+              <div className="flex flex-wrap items-center gap-6 mb-10 p-6 bg-stone-50 rounded-[2.5rem] border border-stone-100">
+                <div className="flex items-center gap-3">
+                  <Filter className="w-4 h-4 text-stone-400" />
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-400">Filters</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-500">Category</span>
+                  <select 
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-black focus:outline-none focus:ring-2 focus:ring-stone-900 appearance-none cursor-pointer hover:border-stone-400 transition-colors"
+                  >
+                    <option value="all">All</option>
+                    <option value="study">Study</option>
+                    <option value="work">Work</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-500">Status</span>
+                  <select 
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-black focus:outline-none focus:ring-2 focus:ring-stone-900 appearance-none cursor-pointer hover:border-stone-400 transition-colors"
+                  >
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-stone-500">Sort</span>
+                  <select 
+                    value={filterSort}
+                    onChange={(e) => setFilterSort(e.target.value as 'newest' | 'oldest')}
+                    className="bg-white border border-stone-200 rounded-xl px-4 py-2 text-xs font-black focus:outline-none focus:ring-2 focus:ring-stone-900 appearance-none cursor-pointer hover:border-stone-400 transition-colors"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredTasks.length === 0 ? (
+                  <div className="col-span-2 py-20 text-center bg-stone-50 rounded-[3rem] border border-dashed border-stone-200">
+                    <p className="text-stone-400 font-bold italic">No tasks match your filters.</p>
+                  </div>
+                ) : (
+                  filteredTasks.map((task) => (
+                    <motion.div 
+                      layout
+                      key={task.id} 
+                      className={`p-6 rounded-[2.5rem] border transition-all relative overflow-hidden group ${
+                        task.completed 
+                        ? 'bg-stone-50 border-stone-100 opacity-60' 
+                        : 'bg-white border-stone-100 shadow-sm hover:shadow-xl hover:shadow-stone-200/50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-2xl ${
+                            task.category === 'study' ? 'bg-blue-50 text-blue-500' :
+                            task.category === 'work' ? 'bg-purple-50 text-purple-500' :
+                            'bg-stone-100 text-stone-500'
+                          }`}>
+                            {task.category === 'study' ? <BookOpen className="w-5 h-5" /> :
+                             task.category === 'work' ? <Briefcase className="w-5 h-5" /> :
+                             <Plus className="w-5 h-5" />}
+                          </div>
+                          <div>
+                            <h3 className={`font-black text-lg tracking-tight ${task.completed ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+                              {task.title}
+                            </h3>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">
+                              {task.duration_minutes}m Duration
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className={`font-bold text-sm ${task.completed ? 'line-through text-stone-400' : 'text-stone-900'}`}>
-                            {task.title}
-                          </h3>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">
-                            {task.duration_minutes}m Duration
-                          </span>
-                        </div>
+                        <button 
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="p-2 text-stone-200 hover:text-red-500 transition-colors active:scale-90"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="p-2 text-stone-300 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {!task.completed && (
-                      <button 
-                        onClick={() => handleCompleteTask(task.id)}
-                        className="w-full py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Complete
-                      </button>
-                    )}
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </section>
+                      {!task.completed && (
+                        <button 
+                          onClick={() => handleCompleteTask(task.id)}
+                          className="w-full py-3.5 bg-stone-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-stone-800 transition-all flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-stone-200"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          Complete
+                        </button>
+                      )}
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </section>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-stone-100">
@@ -1037,6 +1047,7 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
           </div>
         )}
       </AnimatePresence>
+    </div>
     </div>
   );
 }

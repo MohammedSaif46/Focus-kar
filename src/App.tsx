@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import Planner from './components/Planner';
@@ -88,7 +89,9 @@ export default function App() {
           facebook_blocked: 0,
           uninstall_blocked: 0,
           split_screen_blocked: 0,
-          floating_window_blocked: 0
+          floating_window_blocked: 0,
+          display_over_apps_granted: 0,
+          blocked_apps: []
         };
         try {
           await setDoc(doc(db, 'users', uid), newUser);
@@ -159,7 +162,7 @@ export default function App() {
   const showBottomNav = currentView === 'dashboard' || currentView === 'planner' || currentView === 'blocks';
 
   return (
-    <div className={`min-h-screen bg-stone-50 ${getThemeClass()}`}>
+    <div className={`min-h-screen bg-white ${getThemeClass()}`}>
       <div className="pb-24">
         {currentView === 'adult-protection' ? (
           <AdultContentProtection 
@@ -187,35 +190,45 @@ export default function App() {
       </div>
 
       {showBottomNav && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-stone-900 p-4 z-50">
-          <div className="max-w-md mx-auto flex items-center justify-between">
+        <nav className="fixed bottom-0 left-0 right-0 bg-stone-950 border-t border-emerald-500/20 px-6 py-4 pb-10 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <div className="max-w-md mx-auto flex items-center justify-around">
             <button 
               onClick={() => setCurrentView('dashboard')}
-              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'dashboard' ? 'text-white' : 'text-stone-600'}`}
+              className={`flex flex-col items-center gap-2 transition-all duration-500 group ${currentView === 'dashboard' ? 'text-emerald-400' : 'text-stone-600 hover:text-stone-400'}`}
             >
-              <Hourglass className="w-6 h-6" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Focus</span>
+              <div className={`p-3 rounded-[1.25rem] transition-all duration-500 ${currentView === 'dashboard' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 'bg-stone-900 group-hover:bg-stone-800'}`}>
+                <Hourglass className="w-5 h-5" />
+              </div>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${currentView === 'dashboard' ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>Focus</span>
             </button>
             <button 
               onClick={() => setCurrentView('planner')}
-              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'planner' ? 'text-white' : 'text-stone-600'}`}
+              className={`flex flex-col items-center gap-2 transition-all duration-500 group ${currentView === 'planner' ? 'text-emerald-400' : 'text-stone-600 hover:text-stone-400'}`}
             >
-              <Calendar className="w-6 h-6" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Planner</span>
+              <div className={`p-3 rounded-[1.25rem] transition-all duration-500 ${currentView === 'planner' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 'bg-stone-900 group-hover:bg-stone-800'}`}>
+                <Calendar className="w-5 h-5" />
+              </div>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${currentView === 'planner' ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>Planner</span>
             </button>
             <button 
               onClick={() => setCurrentView('blocks')}
-              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'blocks' ? 'text-white' : 'text-stone-600'}`}
+              className={`flex flex-col items-center gap-2 transition-all duration-500 group ${currentView === 'blocks' ? 'text-emerald-400' : 'text-stone-600 hover:text-stone-400'}`}
             >
-              <div className="relative">
-                <ShieldAlert className="w-6 h-6" />
-                {user.accessibility_granted === 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-black">
-                    <span className="text-[8px] font-black text-white">!</span>
-                  </div>
-                )}
+              <div className={`p-3 rounded-[1.25rem] transition-all duration-500 ${currentView === 'blocks' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 'bg-stone-900 group-hover:bg-stone-800'}`}>
+                <div className="relative">
+                  <ShieldAlert className="w-5 h-5" />
+                  {user.accessibility_granted === 0 && (
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-stone-950 shadow-sm"
+                    >
+                      <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                    </motion.div>
+                  )}
+                </div>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest">Shield</span>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${currentView === 'blocks' ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>Shield</span>
             </button>
           </div>
         </nav>

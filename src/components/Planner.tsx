@@ -22,6 +22,21 @@ export default function Planner({ user }: PlannerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const StatusBar = ({ dark = false }: { dark?: boolean }) => (
+    <div className={`h-12 px-6 flex items-center justify-between ${dark ? 'text-white' : 'text-black'}`}>
+      <span className="text-sm font-bold">9:41</span>
+      <div className="flex items-center gap-2">
+        <div className="w-4 h-4 rounded-sm border-[1.5px] border-current flex items-center justify-center">
+          <div className="w-2 h-2 bg-current rounded-full" />
+        </div>
+        <Zap className="w-4 h-4 fill-current" />
+        <div className="w-6 h-3 rounded-sm border-[1.5px] border-current relative">
+          <div className="absolute left-0.5 top-0.5 bottom-0.5 w-3 bg-current rounded-sm" />
+        </div>
+      </div>
+    </div>
+  );
+
   // Generate 30 days for the horizontal picker
   const [baseDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const calendarDays = Array.from({ length: 30 }, (_, i) => addDays(baseDate, i));
@@ -54,150 +69,160 @@ export default function Planner({ user }: PlannerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 pb-32">
-      {/* Header */}
-      <header className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">{format(selectedDate, 'MMMM yyyy')}</h1>
-          <button 
-            onClick={() => setSelectedDate(new Date())}
-            className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mt-1"
-          >
-            Jump to Today
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => scroll('left')}
-            className="p-2 bg-stone-900 rounded-xl hover:bg-stone-800 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-stone-400" />
-          </button>
-          <button 
-            onClick={() => scroll('right')}
-            className="p-2 bg-stone-900 rounded-xl hover:bg-stone-800 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-stone-400" />
-          </button>
-        </div>
-      </header>
-
-      {/* Horizontal Date Picker */}
-      <div 
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto mb-10 pb-2 no-scrollbar scroll-smooth"
-      >
-        {calendarDays.map((day) => {
-          const isSelected = isSameDay(day, selectedDate);
-          const isToday = isSameDay(day, new Date());
-          return (
-            <button
-              key={day.toString()}
-              onClick={() => setSelectedDate(day)}
-              className="flex flex-col items-center gap-2 flex-shrink-0 min-w-[56px] relative"
-            >
-              <span className={cn(
-                "text-[10px] font-black uppercase tracking-widest transition-colors",
-                isSelected ? "text-emerald-500" : "text-stone-500"
-              )}>
-                {format(day, 'EEE')}
-              </span>
-              <div className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black transition-all relative",
-                isSelected 
-                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 scale-110' 
-                  : 'bg-stone-900/50 text-stone-400 border border-stone-800 hover:border-stone-700'
-              )}>
-                {format(day, 'd')}
-                {isToday && !isSelected && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-500 rounded-full" />
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Focus Goal Card */}
-      <section className="bg-stone-900/40 p-8 rounded-[2.5rem] border border-stone-800/50 mb-10">
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500/30">
+      <StatusBar dark />
+      
+      <div className="p-6 pb-32">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-lg font-black text-white">Daily Focus Goal</h3>
-            <p className="text-stone-500 text-xs font-medium">You're almost there! 15m left.</p>
+            <h1 className="text-3xl font-black tracking-tight">{format(selectedDate, 'MMMM yyyy')}</h1>
+            <button 
+              onClick={() => setSelectedDate(new Date())}
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mt-2 hover:text-emerald-400 transition-colors"
+            >
+              Jump to Today
+            </button>
           </div>
-          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-            <Zap className="w-6 h-6 text-emerald-500" />
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => scroll('left')}
+              className="p-3 bg-stone-900/50 rounded-2xl border border-stone-800 hover:bg-stone-800 transition-all active:scale-90"
+            >
+              <ChevronLeft className="w-5 h-5 text-stone-400" />
+            </button>
+            <button 
+              onClick={() => scroll('right')}
+              className="p-3 bg-stone-900/50 rounded-2xl border border-stone-800 hover:bg-stone-800 transition-all active:scale-90"
+            >
+              <ChevronRight className="w-5 h-5 text-stone-400" />
+            </button>
           </div>
-        </div>
-        
-        <div className="space-y-3">
-          <div className="h-4 bg-stone-800 rounded-full overflow-hidden p-1">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: '75%' }}
-              className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-            />
-          </div>
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
-            <span>45m Focused</span>
-            <span>60m Goal</span>
-          </div>
-        </div>
-      </section>
+        </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-6 mb-10">
-        <div className="bg-stone-900/50 p-4 rounded-2xl border border-stone-800">
-          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-1">Focus</span>
-          <div className="text-xl font-bold">0m</div>
+        {/* Horizontal Date Picker */}
+        <div 
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto mb-12 pb-4 no-scrollbar scroll-smooth"
+        >
+          {calendarDays.map((day) => {
+            const isSelected = isSameDay(day, selectedDate);
+            const isToday = isSameDay(day, new Date());
+            return (
+              <button
+                key={day.toString()}
+                onClick={() => setSelectedDate(day)}
+                className="flex flex-col items-center gap-3 flex-shrink-0 min-w-[64px] relative group"
+              >
+                <span className={cn(
+                  "text-[10px] font-black uppercase tracking-[0.2em] transition-colors",
+                  isSelected ? "text-emerald-500" : "text-stone-500 group-hover:text-stone-300"
+                )}>
+                  {format(day, 'EEE')}
+                </span>
+                <div className={cn(
+                  "w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-base font-black transition-all relative",
+                  isSelected 
+                    ? 'bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' 
+                    : 'bg-stone-900/40 text-stone-400 border border-stone-800/50 hover:border-stone-700 hover:bg-stone-800/60'
+                )}>
+                  {format(day, 'd')}
+                  {isToday && !isSelected && (
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
-        <div className="bg-stone-900/50 p-4 rounded-2xl border border-stone-800">
-          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-widest block mb-1">Usage</span>
-          <div className="text-xl font-bold">6h 38m</div>
-        </div>
-      </div>
 
-      {/* Schedule List */}
-      <div className="space-y-4">
-        {schedules.length === 0 ? (
-          <div className="py-20 text-center">
-            <Calendar className="w-12 h-12 text-stone-800 mx-auto mb-4" />
-            <p className="text-stone-500 text-sm">No schedules yet. Add one to stay focused!</p>
+        {/* Focus Goal Card */}
+        <section className="bg-stone-900/40 p-8 rounded-[3rem] border border-stone-800/50 mb-12 shadow-inner">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-black text-white tracking-tight">Daily Focus Goal</h3>
+              <p className="text-stone-500 text-sm font-bold mt-1">You're almost there! <span className="text-emerald-500">15m left.</span></p>
+            </div>
+            <div className="w-14 h-14 bg-emerald-500/10 rounded-[1.25rem] flex items-center justify-center border border-emerald-500/20">
+              <Zap className="w-7 h-7 text-emerald-500 fill-current" />
+            </div>
           </div>
-        ) : (
-          schedules.map((schedule) => (
-            <div key={schedule.id} className="bg-stone-900/50 p-5 rounded-3xl border border-stone-800 flex items-center gap-4 relative overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-violet-500" />
-              <div className="w-12 h-12 bg-stone-800 rounded-2xl flex items-center justify-center">
-                <Moon className="w-6 h-6 text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold text-lg">{schedule.name}</h3>
-                  {schedule.repeat && <Repeat className="w-4 h-4 text-emerald-500" />}
-                  <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-black">
-                    <Hourglass className="w-3 h-3" />
-                    2
+          
+          <div className="space-y-4">
+            <div className="h-5 bg-stone-900 rounded-full overflow-hidden p-1 border border-stone-800">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: '75%' }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="h-full bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+              />
+            </div>
+            <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.2em] text-stone-600">
+              <span>45m Focused</span>
+              <span>60m Goal</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-6 mb-12">
+          <div className="bg-stone-900/40 p-6 rounded-[2rem] border border-stone-800/50 shadow-lg">
+            <span className="text-[11px] font-black text-stone-600 uppercase tracking-[0.2em] block mb-2">Focus Time</span>
+            <div className="text-3xl font-black tracking-tight">0m</div>
+          </div>
+          <div className="bg-stone-900/40 p-6 rounded-[2rem] border border-stone-800/50 shadow-lg">
+            <span className="text-[11px] font-black text-stone-600 uppercase tracking-[0.2em] block mb-2">App Usage</span>
+            <div className="text-3xl font-black tracking-tight">6h 38m</div>
+          </div>
+        </div>
+
+        {/* Schedule List */}
+        <div className="space-y-5">
+          <h2 className="text-xl font-black text-stone-100 mb-6 tracking-tight">Your Schedule</h2>
+          {schedules.length === 0 ? (
+            <div className="py-24 text-center bg-stone-900/20 rounded-[3rem] border border-dashed border-stone-800">
+              <Calendar className="w-16 h-16 text-stone-800 mx-auto mb-6" />
+              <p className="text-stone-500 font-bold">No schedules yet. Add one to stay focused!</p>
+            </div>
+          ) : (
+            schedules.map((schedule) => (
+              <motion.div 
+                key={schedule.id} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-stone-900/40 p-6 rounded-[2.5rem] border border-stone-800/50 flex items-center gap-5 relative overflow-hidden shadow-lg group active:scale-[0.98] transition-transform"
+              >
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-violet-500 shadow-[2px_0_10px_rgba(139,92,246,0.3)]" />
+                <div className="w-14 h-14 bg-stone-800 rounded-[1.25rem] flex items-center justify-center border border-stone-700">
+                  <Moon className="w-7 h-7 text-amber-400 fill-current" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <h3 className="font-black text-xl tracking-tight">{schedule.name}</h3>
+                    {schedule.repeat && <Repeat className="w-4 h-4 text-emerald-500" />}
+                    <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-xl text-[10px] font-black border border-amber-500/20">
+                      <Hourglass className="w-3.5 h-3.5" />
+                      2
+                    </div>
+                  </div>
+                  <div className="text-stone-500 text-[15px] font-bold">
+                    {schedule.fromTime} - {schedule.toTime}
                   </div>
                 </div>
-                <div className="text-stone-400 text-sm font-medium">
-                  {schedule.fromTime} - {schedule.toTime}
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-stone-700" />
-            </div>
-          ))
-        )}
-      </div>
+                <ChevronRight className="w-6 h-6 text-stone-700 group-hover:text-stone-500 transition-colors" />
+              </motion.div>
+            ))
+          )}
+        </div>
 
-      {/* Floating Add Button */}
-      <button 
-        onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-28 left-1/2 -translate-x-1/2 px-8 py-4 bg-white text-black rounded-full font-bold shadow-2xl flex items-center gap-2 hover:scale-105 transition-transform z-40"
-      >
-        <Plus className="w-5 h-5" />
-        Add Schedule
-      </button>
+        {/* Floating Add Button */}
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="fixed bottom-32 left-1/2 -translate-x-1/2 px-10 py-5 bg-white text-black rounded-full font-black text-lg uppercase tracking-[0.2em] shadow-[0_20px_40px_rgba(255,255,255,0.15)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all z-40"
+        >
+          <Plus className="w-6 h-6" />
+          Add Schedule
+        </button>
 
       {/* New Schedule Modal */}
       <AnimatePresence>
@@ -208,6 +233,7 @@ export default function Planner({ user }: PlannerProps) {
           />
         )}
       </AnimatePresence>
+    </div>
     </div>
   );
 }

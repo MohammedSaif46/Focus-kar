@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, ShieldCheck, ShieldAlert, Plus, Trash2, BarChart3, Lock, Unlock, ArrowLeft, Info, Globe, ExternalLink, Copy, Check } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldAlert, Plus, Trash2, BarChart3, Lock, Unlock, ArrowLeft, Info, Globe, ExternalLink, Copy, Check, Wifi, Battery, Signal } from 'lucide-react';
 import { User } from '../types';
+
+const StatusBar = () => (
+  <div className="flex items-center justify-between px-6 py-2 bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-stone-50">
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-black text-stone-900 tracking-tighter">12:45</span>
+    </div>
+    <div className="flex items-center gap-2 text-stone-900">
+      <Signal className="w-3 h-3" />
+      <Wifi className="w-3 h-3" />
+      <div className="flex items-center gap-1">
+        <span className="text-[8px] font-black">85%</span>
+        <Battery className="w-3 h-3 rotate-90" />
+      </div>
+    </div>
+  </div>
+);
 
 import { db } from '../lib/firebase';
 import { doc, setDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
@@ -77,28 +93,42 @@ export default function AdultContentProtection({ user, onBack, onUpdateUser }: A
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto p-6 md:p-10"
-    >
-      <header className="flex items-center gap-4 mb-10">
-        <button 
-          onClick={onBack}
-          className="p-3 bg-white rounded-2xl border border-stone-100 text-stone-600 hover:bg-stone-50 transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-stone-900 rounded-2xl flex items-center justify-center shadow-lg shadow-stone-200">
-            <span className="text-white font-black text-xl tracking-tighter">FK</span>
+    <div className="min-h-screen bg-white font-sans selection:bg-stone-900 selection:text-white">
+      <StatusBar />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto p-6 md:p-10 pb-32"
+      >
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+          <div className="flex items-center gap-5">
+            <button 
+              onClick={onBack}
+              className="p-4 bg-white rounded-[1.25rem] border border-stone-100 text-stone-600 hover:bg-stone-50 transition-all shadow-sm active:scale-90"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 bg-stone-900 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-stone-200 border-2 border-white">
+                <ShieldCheck className="text-white w-8 h-8" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Security Center</span>
+                  <div className="h-px w-6 bg-stone-100" />
+                </div>
+                <h1 className="text-3xl font-black text-stone-900 tracking-tight">Adult Protection</h1>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-black text-stone-900">Adult Content Protection</h1>
-            <p className="text-stone-500 font-medium">Powered by CleanBrowsing DNS Filtering.</p>
+          
+          <div className="hidden md:block">
+            <div className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${isEnabled ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-stone-50 text-stone-400 border-stone-100'}`}>
+              {isEnabled ? 'Active Protection' : 'Protection Disabled'}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Controls */}
@@ -234,5 +264,6 @@ export default function AdultContentProtection({ user, onBack, onUpdateUser }: A
         </div>
       </div>
     </motion.div>
+    </div>
   );
 }
