@@ -3,10 +3,9 @@ import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
 import AdultContentProtection from './components/AdultContentProtection';
 import DistractionBlocker from './components/DistractionBlocker';
-import Auth from './components/Auth';
 import { User } from './types';
 import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 type View = 'dashboard' | 'onboarding' | 'adult-protection' | 'distraction-blocker';
@@ -19,10 +18,15 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        await fetchUser(firebaseUser.uid, firebaseUser.email || '', firebaseUser.displayName, firebaseUser.photoURL);
+        await fetchUser(firebaseUser.uid, firebaseUser.email || 'guest@focuskar.app', firebaseUser.displayName || 'Guest User', firebaseUser.photoURL);
       } else {
-        setUser(null);
-        setLoading(false);
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error('Anonymous auth failed:', error);
+          setUser(null);
+          setLoading(false);
+        }
       }
     });
     return () => unsubscribe();
@@ -49,11 +53,11 @@ export default function App() {
           setCurrentView('onboarding');
         }
       } else {
-        // Create new user
+        // Create new user (Guest)
         const newUser: User = {
           uid,
-          email,
-          displayName,
+          email: email || 'guest@focuskar.app',
+          displayName: displayName || 'Guest User',
           photoURL,
           onboarding_completed: 0,
           accessibility_granted: 0,
@@ -130,7 +134,11 @@ export default function App() {
   }
 
   if (!user) {
-    return <Auth />;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-stone-50">
+        <div className="w-8 h-8 border-4 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (currentView === 'onboarding' || user.onboarding_completed === 0) {
