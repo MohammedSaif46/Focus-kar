@@ -34,6 +34,16 @@ service cloud.firestore {
     //   - title: string (required) - Task title
     //   - completed: int (required) - 0 or 1
     //
+    // Collection: schedules
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required) - Owner UID
+    //   - name: string (required) - Schedule name
+    //   - fromTime: string (required) - Start time
+    //   - toTime: string (required) - End time
+    //   - repeat: bool (optional) - Repeat weekly
+    //   - createdAt: string (required) - ISO date-time
+    //
     // ===============================================================
 
     // Helper Functions
@@ -78,6 +88,13 @@ service cloud.firestore {
              data.completed is int;
     }
 
+    function isValidSchedule(data) {
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             data.fromTime is string &&
+             data.toTime is string;
+    }
+
     // User profiles
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
@@ -98,6 +115,14 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && isValidTask(request.resource.data);
       allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid && isValidTask(request.resource.data)) || isAdmin();
+      allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Schedules
+    match /schedules/{scheduleId} {
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidSchedule(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.uid == request.auth.uid && isValidSchedule(request.resource.data)) || isAdmin();
       allow delete: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
     }
   }

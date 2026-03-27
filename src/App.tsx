@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
+import Planner from './components/Planner';
 import AdultContentProtection from './components/AdultContentProtection';
 import DistractionBlocker from './components/DistractionBlocker';
 import { User } from './types';
 import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { Hourglass, Calendar, Users, ShieldAlert } from 'lucide-react';
 
-type View = 'dashboard' | 'onboarding' | 'adult-protection' | 'distraction-blocker';
+type View = 'dashboard' | 'onboarding' | 'adult-protection' | 'blocks' | 'planner';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -77,7 +85,10 @@ export default function App() {
           theme: 'rainbow',
           reels_blocked: 0,
           shorts_blocked: 0,
-          facebook_blocked: 0
+          facebook_blocked: 0,
+          uninstall_blocked: 0,
+          split_screen_blocked: 0,
+          floating_window_blocked: 0
         };
         try {
           await setDoc(doc(db, 'users', uid), newUser);
@@ -145,28 +156,69 @@ export default function App() {
     return <Onboarding user={user} onComplete={handleOnboardingComplete} />;
   }
 
+  const showBottomNav = currentView === 'dashboard' || currentView === 'planner' || currentView === 'blocks';
+
   return (
     <div className={`min-h-screen bg-stone-50 ${getThemeClass()}`}>
-      {currentView === 'adult-protection' ? (
-        <AdultContentProtection 
-          user={user} 
-          onBack={() => setCurrentView('dashboard')} 
-          onUpdateUser={() => fetchUser(user.uid, user.email)} 
-        />
-      ) : currentView === 'distraction-blocker' ? (
-        <DistractionBlocker 
-          user={user} 
-          onBack={() => setCurrentView('dashboard')} 
-          onUpdateUser={() => fetchUser(user.uid, user.email)} 
-        />
-      ) : (
-        <Dashboard 
-          user={user} 
-          onUpdateUser={() => fetchUser(user.uid, user.email)} 
-          onNavigateToAdultProtection={() => setCurrentView('adult-protection')}
-          onNavigateToDistractionBlocker={() => setCurrentView('distraction-blocker')}
-          onLogout={handleLogout}
-        />
+      <div className="pb-24">
+        {currentView === 'adult-protection' ? (
+          <AdultContentProtection 
+            user={user} 
+            onBack={() => setCurrentView('dashboard')} 
+            onUpdateUser={() => fetchUser(user.uid, user.email)} 
+          />
+        ) : currentView === 'blocks' ? (
+          <DistractionBlocker 
+            user={user} 
+            onBack={() => setCurrentView('dashboard')} 
+            onUpdateUser={() => fetchUser(user.uid, user.email)} 
+          />
+        ) : currentView === 'planner' ? (
+          <Planner user={user} />
+        ) : (
+          <Dashboard 
+            user={user} 
+            onUpdateUser={() => fetchUser(user.uid, user.email)} 
+            onNavigateToAdultProtection={() => setCurrentView('adult-protection')}
+            onNavigateToDistractionBlocker={() => setCurrentView('blocks')}
+            onLogout={handleLogout}
+          />
+        )}
+      </div>
+
+      {showBottomNav && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-stone-900 p-4 z-50">
+          <div className="max-w-md mx-auto flex items-center justify-between">
+            <button 
+              onClick={() => setCurrentView('dashboard')}
+              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'dashboard' ? 'text-white' : 'text-stone-600'}`}
+            >
+              <Hourglass className="w-6 h-6" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Focus</span>
+            </button>
+            <button 
+              onClick={() => setCurrentView('planner')}
+              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'planner' ? 'text-white' : 'text-stone-600'}`}
+            >
+              <Calendar className="w-6 h-6" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Planner</span>
+            </button>
+            <button 
+              onClick={() => setCurrentView('blocks')}
+              className={`flex flex-col items-center gap-1 transition-colors ${currentView === 'blocks' ? 'text-white' : 'text-stone-600'}`}
+            >
+              <div className="relative">
+                <ShieldAlert className="w-6 h-6" />
+                {user.accessibility_granted === 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border-2 border-black">
+                    <span className="text-[8px] font-black text-white">!</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Shield</span>
+            </button>
+          </div>
+        </nav>
       )}
     </div>
   );

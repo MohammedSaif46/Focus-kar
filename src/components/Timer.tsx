@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, RotateCcw, Coffee, Zap, BellOff, Settings } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Zap, BellOff, Settings, Sparkles } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import confetti from 'canvas-confetti';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -50,6 +51,15 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
     setIsActive(false);
     if (!isBreak) {
       onComplete(duration);
+      
+      // Confetti!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#fbbf24', '#ef4444', '#3b82f6']
+      });
+
       sendNotification("Focus Session Complete!", "Great job! Time for a well-deserved break.");
       setIsBreak(true);
       setTimeLeft(5 * 60); // 5 min break
@@ -80,36 +90,53 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = (timeLeft / (isBreak ? 5 * 60 : duration * 60)) * 100;
+  const totalTime = isBreak ? 5 * 60 : duration * 60;
+  const progress = (timeLeft / totalTime) * 100;
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-64 h-64 flex items-center justify-center">
+      <div className="relative w-72 h-72 flex items-center justify-center">
+        {/* Outer Glow */}
+        {isActive && (
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.05, 1],
+              opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className={cn(
+              "absolute inset-0 rounded-full blur-3xl",
+              isBreak ? "bg-emerald-500" : "bg-stone-900"
+            )}
+          />
+        )}
+
         {/* Progress Ring */}
-        <svg className="absolute w-full h-full -rotate-90">
+        <svg className="absolute w-full h-full -rotate-90 drop-shadow-sm">
           <circle
-            cx="128"
-            cy="128"
-            r="120"
+            cx="144"
+            cy="144"
+            r="130"
             fill="transparent"
             stroke="currentColor"
-            strokeWidth="8"
+            strokeWidth="12"
             className="text-stone-100"
           />
           <motion.circle
-            cx="128"
-            cy="128"
-            r="120"
+            cx="144"
+            cy="144"
+            r="130"
             fill="transparent"
             stroke="currentColor"
-            strokeWidth="8"
-            strokeDasharray={2 * Math.PI * 120}
+            strokeWidth="12"
+            strokeDasharray={2 * Math.PI * 130}
             initial={{ strokeDashoffset: 0 }}
-            animate={{ strokeDashoffset: (2 * Math.PI * 120) * (1 - progress / 100) }}
+            animate={{ strokeDashoffset: (2 * Math.PI * 130) * (1 - progress / 100) }}
             className={cn(
-              "transition-all duration-1000",
-              isBreak ? "text-emerald-500" : "text-accent"
+              "transition-all duration-1000 stroke-cap-round",
+              isBreak ? "text-emerald-500" : "text-stone-900"
             )}
+            style={{ strokeLinecap: 'round' }}
           />
         </svg>
 
@@ -123,7 +150,7 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={() => !isActive && !isBreak && setIsEditing(true)}
                 className={cn(
-                  "text-5xl font-mono font-bold text-stone-900 tabular-nums cursor-pointer hover:scale-105 transition-transform",
+                  "text-6xl font-mono font-black text-stone-900 tabular-nums cursor-pointer hover:scale-105 transition-transform tracking-tighter",
                   !isActive && !isBreak && "hover:text-stone-600"
                 )}
               >
@@ -144,24 +171,31 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
                   onBlur={() => setIsEditing(false)}
                   onKeyDown={(e) => e.key === 'Enter' && setIsEditing(false)}
                   autoFocus
-                  className="w-24 text-5xl font-mono font-bold text-stone-900 text-center bg-transparent border-b-2 border-stone-900 focus:outline-none"
+                  className="w-24 text-6xl font-mono font-black text-stone-900 text-center bg-transparent border-b-4 border-stone-900 focus:outline-none tracking-tighter"
                 />
                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-2">Minutes</span>
               </motion.div>
             )}
           </AnimatePresence>
           {!isEditing && (
-            <div className="text-stone-400 text-sm font-medium uppercase tracking-widest mt-1">
-              {isBreak ? "Break Time" : "Focusing"}
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <div className={cn(
+                "w-1.5 h-1.5 rounded-full animate-pulse",
+                isBreak ? "bg-emerald-500" : "bg-stone-900"
+              )} />
+              <div className="text-stone-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                {isBreak ? "Break Time" : "Focusing"}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mt-12 flex items-center gap-6">
+      <div className="mt-16 flex items-center gap-8">
         <button
           onClick={resetTimer}
-          className="p-4 bg-stone-100 text-stone-600 rounded-2xl hover:bg-stone-200 transition-colors"
+          className="p-5 bg-stone-100 text-stone-600 rounded-3xl hover:bg-stone-200 transition-colors shadow-sm"
+          title="Reset"
         >
           <RotateCcw className="w-6 h-6" />
         </button>
@@ -169,20 +203,21 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
         <button
           onClick={toggleTimer}
           className={cn(
-            "p-6 rounded-3xl shadow-lg transition-all transform hover:scale-105 active:scale-95",
-            isActive ? "bg-stone-100 text-stone-900" : "bg-stone-900 text-white"
+            "p-8 rounded-[2.5rem] shadow-xl transition-all transform hover:scale-105 active:scale-95",
+            isActive ? "bg-stone-100 text-stone-900" : "bg-stone-900 text-white shadow-stone-200"
           )}
         >
-          {isActive ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
+          {isActive ? <Pause className="w-10 h-10" /> : <Play className="w-10 h-10 ml-1" />}
         </button>
 
         <button
           onClick={() => !isActive && !isBreak && setIsEditing(true)}
           className={cn(
-            "p-4 bg-stone-100 text-stone-600 rounded-2xl hover:bg-stone-200 transition-colors",
+            "p-5 bg-stone-100 text-stone-600 rounded-3xl hover:bg-stone-200 transition-colors shadow-sm",
             (isActive || isBreak) && "opacity-50 cursor-not-allowed"
           )}
           disabled={isActive || isBreak}
+          title="Settings"
         >
           <Settings className="w-6 h-6" />
         </button>
@@ -192,7 +227,7 @@ export default function Timer({ onComplete, isDndEnabled }: TimerProps) {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 flex items-center gap-2 px-4 py-2 bg-stone-900/5 text-stone-500 rounded-full text-sm font-medium"
+          className="mt-10 flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-stone-200"
         >
           <BellOff className="w-4 h-4" />
           Silent Mode Active

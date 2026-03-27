@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Flame, Calendar, Trophy, ShieldAlert, Settings, Bell, Info, Zap, Coins, Music, TreePine, Lock, Unlock, AlertTriangle, Shield, CheckCircle2, Trash2, Clock, BookOpen, Briefcase, Plus, Sparkles, LogOut, Palette, X, Smartphone } from 'lucide-react';
+import { Flame, Calendar, Trophy, ShieldAlert, Settings, Bell, Info, Zap, Coins, Music, TreePine, Lock, Unlock, AlertTriangle, Shield, CheckCircle2, Trash2, Clock, BookOpen, Briefcase, Plus, Sparkles, LogOut, Palette, X, Smartphone, Filter } from 'lucide-react';
 import { User, FocusSession, Task } from '../types';
 import Timer from './Timer';
 import AIAssistant from './AIAssistant';
@@ -16,12 +16,34 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
   const [unlockDelay, setUnlockDelay] = useState(0);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showThemeSwitcher, setShowThemeSwitcher] = useState(false);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showAddActivityModal, setShowAddActivityModal] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', duration: 25, category: 'work' });
+  const [newActivity, setNewActivity] = useState({ duration: 25, coins: 5 });
   const [rewardData, setRewardData] = useState<{
     coins: number;
     breakdown: { session: number; streak: number; level: number };
     exp: number;
     leveledUp: boolean;
   } | null>(null);
+
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterSort, setFilterSort] = useState<'newest' | 'oldest'>('newest');
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const categoryMatch = filterCategory === 'all' || task.category === filterCategory;
+      const statusMatch = filterStatus === 'all' || 
+                          (filterStatus === 'completed' && task.completed === 1) || 
+                          (filterStatus === 'pending' && task.completed === 0);
+      return categoryMatch && statusMatch;
+    }).sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return filterSort === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  }, [tasks, filterCategory, filterStatus, filterSort]);
 
   const themes = [
     { id: 'rainbow', name: 'Rainbow', color: 'bg-gradient-to-r from-violet-500 via-green-500 to-red-500' },
@@ -155,6 +177,59 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
     }
   };
 
+  const handleAddTask = async () => {
+    if (!newTask.title.trim()) return;
+    try {
+      await addDoc(collection(db, 'tasks'), {
+        uid: user.uid,
+        title: newTask.title,
+        duration_minutes: newTask.duration,
+        category: newTask.category,
+        completed: 0,
+        created_at: new Date().toISOString()
+      });
+      setNewTask({ title: '', duration: 25, category: 'work' });
+      setShowAddTaskModal(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'tasks');
+    }
+  };
+
+  const handleAddActivity = async () => {
+    try {
+      const expEarned = newActivity.duration * 2;
+      const newExp = user.experience + expEarned;
+      let newLevel = user.level;
+      let finalExp = newExp;
+
+      if (finalExp >= 1000) {
+        newLevel += 1;
+        finalExp -= 1000;
+      }
+
+      await addDoc(collection(db, 'sessions'), {
+        uid: user.uid,
+        start_time: new Date().toISOString(),
+        duration_minutes: newActivity.duration,
+        completed: 1,
+        tree_type: 'oak',
+        coins_earned: newActivity.coins
+      });
+
+      await updateDoc(doc(db, 'users', user.uid), {
+        focus_coins: user.focus_coins + newActivity.coins,
+        experience: finalExp,
+        level: newLevel
+      });
+
+      setNewActivity({ duration: 25, coins: 5 });
+      setShowAddActivityModal(false);
+      onUpdateUser();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'sessions');
+    }
+  };
+
   const handleEmergencyUnlock = async () => {
     if (user.focus_coins < 50) {
       alert("Not enough coins for emergency unlock!");
@@ -281,11 +356,86 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
         </div>
       </header>
 
+      {/* Daily Motivation */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10 p-6 bg-stone-50 border border-stone-100 rounded-[2.5rem] flex items-center gap-6"
+      >
+        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+          <Sparkles className="w-6 h-6 text-amber-500" />
+        </div>
+        <div>
+          <p className="text-stone-900 font-bold text-sm leading-relaxed">
+            "Discipline is choosing between what you want now and what you want most."
+          </p>
+          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Abraham Lincoln</span>
+        </div>
+      </motion.div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: Timer & Activity */}
         <div className="lg:col-span-8 space-y-8">
+          {user.accessibility_granted === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-100 p-6 rounded-[2.5rem] flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-2xl shadow-sm">
+                  <ShieldAlert className="w-6 h-6 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="font-black text-red-900">Accessibility Required</h3>
+                  <p className="text-red-700/70 text-xs font-medium">Blocking features are currently disabled.</p>
+                </div>
+              </div>
+              <button 
+                onClick={onNavigateToDistractionBlocker}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+              >
+                Grant Now
+              </button>
+            </motion.div>
+          )}
+
+          {user.notifications_granted === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-amber-50 border border-amber-100 p-6 rounded-[2.5rem] flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-2xl shadow-sm">
+                  <Bell className="w-6 h-6 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="font-black text-amber-900">Notifications Disabled</h3>
+                  <p className="text-amber-700/70 text-xs font-medium">You won't receive focus reminders.</p>
+                </div>
+              </div>
+              <button 
+                onClick={async () => {
+                  try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                      await updateDoc(doc(db, 'users', user.uid), { notifications_granted: 1 });
+                      onUpdateUser();
+                    }
+                  } catch (e) {
+                    console.error('Notification error:', e);
+                  }
+                }}
+                className="px-6 py-3 bg-amber-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-700 transition-all shadow-lg shadow-amber-100"
+              >
+                Enable
+              </button>
+            </motion.div>
+          )}
+
           <section className="bg-white p-10 md:p-16 rounded-[3rem] shadow-xl shadow-stone-200/50 border border-stone-50 flex flex-col items-center relative overflow-hidden">
             <div className="absolute top-8 left-8 flex items-center gap-2 text-stone-300 font-bold text-xs uppercase tracking-widest">
               <TreePine className="w-4 h-4" />
@@ -301,18 +451,70 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
                 <Clock className="w-6 h-6 text-stone-400" />
                 Focus Tasks
               </h2>
-              <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                {tasks.filter(t => t.completed === 0).length} Pending
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowAddTaskModal(true)}
+                  className="p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                  {tasks.filter(t => t.completed === 0).length} Pending
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Filters */}
+            <div className="flex flex-wrap items-center gap-4 mb-8 p-4 bg-stone-50 rounded-[1.5rem] border border-stone-100">
+              <div className="flex items-center gap-2">
+                <Filter className="w-3.5 h-3.5 text-stone-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Filters</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Category</span>
+                <select 
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
+                >
+                  <option value="all">All</option>
+                  <option value="study">Study</option>
+                  <option value="work">Work</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Status</span>
+                <select 
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Sort</span>
+                <select 
+                  value={filterSort}
+                  onChange={(e) => setFilterSort(e.target.value as 'newest' | 'oldest')}
+                  className="bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                </select>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tasks.length === 0 ? (
+              {filteredTasks.length === 0 ? (
                 <div className="col-span-2 py-12 text-center bg-stone-50 rounded-[2rem] border border-dashed border-stone-200">
-                  <p className="text-stone-400 text-sm font-medium italic">No tasks yet. Ask the AI Assistant to add one!</p>
+                  <p className="text-stone-400 text-sm font-medium italic">No tasks match your filters.</p>
                 </div>
               ) : (
-                tasks.map((task) => (
+                filteredTasks.map((task) => (
                   <motion.div 
                     layout
                     key={task.id} 
@@ -383,10 +585,18 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
             </section>
 
             <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-stone-100">
-              <h2 className="text-xl font-bold text-stone-900 mb-6 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-stone-400" />
-                Activity
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-stone-400" />
+                  Activity
+                </h2>
+                <button 
+                  onClick={() => setShowAddActivityModal(true)}
+                  className="p-1.5 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
               <div className="space-y-3">
                 {sessions.length === 0 ? (
                   <p className="text-stone-400 text-center py-4 text-sm italic">No focus sessions yet.</p>
@@ -417,26 +627,39 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
         {/* Right Column: Stats & Gamification */}
         <div className="lg:col-span-4 space-y-8">
           {/* Level Progress */}
-          <section className="bg-stone-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+          <section className="bg-stone-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
             <div className="relative z-10">
               <div className="flex justify-between items-end mb-4">
                 <div>
                   <h3 className="text-stone-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Experience</h3>
-                  <div className="text-3xl font-black">Lvl {user.level}</div>
+                  <div className="text-3xl font-black flex items-center gap-2">
+                    Lvl {user.level}
+                    <motion.div
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                    >
+                      <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                    </motion.div>
+                  </div>
                 </div>
                 <div className="text-right">
                   <span className="text-stone-400 text-xs font-bold">{user.experience} / 1000 XP</span>
                 </div>
               </div>
-              <div className="h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
+              <div className="h-4 bg-white/5 rounded-full overflow-hidden p-1 border border-white/10">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${(user.experience % 1000) / 10}%` }}
-                  className="h-full bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)]"
-                />
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full relative"
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_15px_#fff] blur-[1px]" />
+                </motion.div>
               </div>
             </div>
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 blur-3xl rounded-full" />
+            {/* Background Effects */}
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 blur-3xl rounded-full group-hover:bg-emerald-500/20 transition-colors" />
+            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-amber-500/5 blur-3xl rounded-full" />
           </section>
 
           {/* User Profile Info */}
@@ -483,37 +706,23 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
             </button>
           </section>
 
-          {/* Adult Content Protection */}
+          {/* Blocks Section */}
           <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-stone-100">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black text-stone-900">Adult Blocker</h3>
-              <Shield className={`w-5 h-5 ${user.porn_blocker_enabled ? 'text-emerald-500' : 'text-stone-300'}`} />
+              <h3 className="text-lg font-black text-stone-900">Blocks</h3>
+              <div className="flex items-center gap-2">
+                <Shield className={`w-5 h-5 ${user.porn_blocker_enabled ? 'text-emerald-500' : 'text-stone-300'}`} />
+                <Smartphone className={`w-5 h-5 ${user.reels_blocked || user.shorts_blocked || user.facebook_blocked ? 'text-emerald-500' : 'text-stone-300'}`} />
+              </div>
             </div>
             <p className="text-stone-500 text-sm mb-6">
-              Protect your mind from explicit content and stay focused.
-            </p>
-            <button 
-              onClick={onNavigateToAdultProtection}
-              className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-stone-800 transition-all"
-            >
-              Manage Protection
-            </button>
-          </section>
-
-          {/* Distraction Blocker */}
-          <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-stone-100">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black text-stone-900">Distraction Blocker</h3>
-              <Smartphone className={`w-5 h-5 ${user.reels_blocked || user.shorts_blocked || user.facebook_blocked ? 'text-emerald-500' : 'text-stone-300'}`} />
-            </div>
-            <p className="text-stone-500 text-sm mb-6">
-              Block addictive short-form content like Reels and YouTube Shorts.
+              Manage app limits, website blocks, and adult content protection in one place.
             </p>
             <button 
               onClick={onNavigateToDistractionBlocker}
               className="w-full py-3 bg-stone-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-stone-800 transition-all"
             >
-              Manage Blockers
+              Open Blocks
             </button>
           </section>
 
@@ -675,6 +884,126 @@ export default function Dashboard({ user, onUpdateUser, onNavigateToAdultProtect
           </div>
         )}
       </AnimatePresence>
+      {/* Add Task Modal */}
+      <AnimatePresence>
+        {showAddTaskModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-md p-8 rounded-[3rem] shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-stone-900">Add Task</h2>
+                <button onClick={() => setShowAddTaskModal(false)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
+                  <X className="w-5 h-5 text-stone-400" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Task Title</label>
+                  <input 
+                    type="text" 
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    placeholder="What are you focusing on?"
+                    className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900/5 font-bold text-stone-900"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Duration (min)</label>
+                    <input 
+                      type="number" 
+                      value={newTask.duration}
+                      onChange={(e) => setNewTask({ ...newTask, duration: parseInt(e.target.value) || 0 })}
+                      className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900/5 font-bold text-stone-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Category</label>
+                    <select 
+                      value={newTask.category}
+                      onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+                      className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900/5 font-bold text-stone-900 appearance-none"
+                    >
+                      <option value="work">Work</option>
+                      <option value="study">Study</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleAddTask}
+                  className="w-full py-5 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-stone-200 hover:bg-stone-800 transition-all"
+                >
+                  Create Task
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Activity Modal */}
+      <AnimatePresence>
+        {showAddActivityModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-md p-8 rounded-[3rem] shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-stone-900">Log Activity</h2>
+                <button onClick={() => setShowAddActivityModal(false)} className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
+                  <X className="w-5 h-5 text-stone-400" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <p className="text-stone-500 text-sm leading-relaxed">
+                  Manually log a focus session that wasn't tracked by the timer.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Duration (min)</label>
+                    <input 
+                      type="number" 
+                      value={newActivity.duration}
+                      onChange={(e) => setNewActivity({ ...newActivity, duration: parseInt(e.target.value) || 0 })}
+                      className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900/5 font-bold text-stone-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Coins Earned</label>
+                    <input 
+                      type="number" 
+                      value={newActivity.coins}
+                      onChange={(e) => setNewActivity({ ...newActivity, coins: parseInt(e.target.value) || 0 })}
+                      className="w-full p-4 bg-stone-50 border border-stone-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-stone-900/5 font-bold text-stone-900"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleAddActivity}
+                  className="w-full py-5 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-stone-200 hover:bg-stone-800 transition-all"
+                >
+                  Log Session
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Theme Switcher Modal */}
       <AnimatePresence>
         {showThemeSwitcher && (

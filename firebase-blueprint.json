@@ -55,6 +55,25 @@
         "created_at": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "title"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "A focus schedule",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "name": { "type": "string" },
+        "tag": { "type": "string" },
+        "fromTime": { "type": "string" },
+        "toTime": { "type": "string" },
+        "date": { "type": "string" },
+        "repeat": { "type": "boolean" },
+        "breakMinutes": { "type": "integer" },
+        "blockedApps": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "fromTime", "toTime"]
     }
   },
   "firestore": {
@@ -69,6 +88,10 @@
     "/tasks/{taskId}": {
       "schema": "Task",
       "description": "User tasks"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "Schedule",
+      "description": "Focus schedules"
     }
   }
 }

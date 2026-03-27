@@ -22,11 +22,14 @@ export interface User {
   reels_blocked: number;
   shorts_blocked: number;
   facebook_blocked: number;
+  uninstall_blocked: number;
+  split_screen_blocked: number;
+  floating_window_blocked: number;
 }
 
 export interface FocusSession {
-  id: number;
-  user_id: number;
+  id: string;
+  uid: string;
   start_time: string;
   duration_minutes: number;
   completed: number;
@@ -35,11 +38,26 @@ export interface FocusSession {
 }
 
 export interface Task {
-  id: number;
-  user_id: number;
+  id: string;
+  uid: string;
   title: string;
   category: string;
   duration_minutes: number;
   completed: number;
   created_at: string;
+}
+
+export interface Schedule {
+  id: string;
+  uid: string;
+  name: string;
+  tag: string;
+  fromTime: string;
+  toTime: string;
+  date: string;
+  repeat: boolean;
+  breakMinutes: number;
+  blockedApps: string[];
+  description: string;
+  createdAt: string;
 }

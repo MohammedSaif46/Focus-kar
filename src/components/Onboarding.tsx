@@ -19,6 +19,7 @@ export default function Onboarding({ user, onComplete }: OnboardingProps) {
   const [accessibilityGranted, setAccessibilityGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState('rainbow');
+  const [loading, setLoading] = useState(false);
 
   const themes = [
     { id: 'rainbow', name: 'Rainbow', color: 'bg-gradient-to-r from-violet-500 via-green-500 to-red-500' },
@@ -40,6 +41,8 @@ export default function Onboarding({ user, onComplete }: OnboardingProps) {
           </motion.div>
         </div>
       ),
+      action: () => setStep(step + 1),
+      actionLabel: "Get Started",
     },
     {
       title: "Choose Your Theme",
@@ -69,12 +72,33 @@ export default function Onboarding({ user, onComplete }: OnboardingProps) {
       title: "Accessibility Permission",
       description: "This allows Focus Kar to monitor screen activity and block distracting apps during your focus sessions. We never collect personal data.",
       icon: <Shield className="w-12 h-12 text-blue-500" />,
-      action: () => {
+      content: (
+        <div className="mb-6">
+          {accessibilityGranted ? (
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-500">
+              <CheckCircle2 className="w-5 h-5" />
+              <span className="text-sm font-bold">Service Connected</span>
+            </div>
+          ) : (
+            <p className="text-[10px] text-stone-400 text-center italic">
+              Note: On web, this permission is simulated for the prototype.
+            </p>
+          )}
+        </div>
+      ),
+      action: async () => {
+        if (accessibilityGranted) {
+          setStep(step + 1);
+          return;
+        }
+        setLoading(true);
+        // Simulate a system check
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setAccessibilityGranted(true);
-        setStep(step + 1);
+        setLoading(false);
       },
-      actionLabel: "Grant Permission",
-      skipLabel: "I'll do it later",
+      actionLabel: accessibilityGranted ? "Continue" : "Grant Permission",
+      skipLabel: accessibilityGranted ? null : "I'll do it later",
     },
     {
       title: "Smart Notifications",
@@ -153,10 +177,17 @@ export default function Onboarding({ user, onComplete }: OnboardingProps) {
               <>
                 <button
                   onClick={currentStep.action}
-                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-semibold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-semibold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {currentStep.actionLabel}
-                  <ArrowRight className="w-4 h-4" />
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      {currentStep.actionLabel}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
                 {currentStep.skipLabel && (
                   <button
